@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Link Finder (TMDB Input Converter)</title>
+<title>Link Finder (TMDB Movie Filter)</title>
 <style>
   body { font-family: sans-serif; padding: 20px; }
   input { width: 300px; padding: 5px; }
@@ -25,11 +25,11 @@ async function findLinks() {
   const results = document.getElementById("results");
   results.innerHTML = "";
 
-  // If input does NOT start with http, treat it as a TMDB search
+  // Convert text to TMDB search URL
   if (!input.startsWith("http://") && !input.startsWith("https://")) {
     const query = input.split(" ").join("+");
     input = `https://www.themoviedb.org/search?language=en-US&query=${query}`;
-    document.getElementById("url").value = input; // Replace input with full URL
+    document.getElementById("url").value = input;
   }
 
   try {
@@ -40,18 +40,21 @@ async function findLinks() {
     const parser = new DOMParser();
     const doc = parser.parseFromString(data.contents, "text/html");
 
-    const links = [...doc.querySelectorAll("a")];
+    const links = [...doc.querySelectorAll("a")].map(a => a.href);
 
-    if (links.length === 0) {
-      results.innerHTML = "<li>No links found.</li>";
+    // Filter: must include /movie/ and have 2+ digits in a row
+    const movieLink = links.find(href =>
+      href.includes("/movie/") && /\d{2,}/.test(href)
+    );
+
+    if (!movieLink) {
+      results.innerHTML = "<li>No movie link found.</li>";
       return;
     }
 
-    links.forEach(a => {
-      const li = document.createElement("li");
-      li.textContent = a.href;
-      results.appendChild(li);
-    });
+    const li = document.createElement("li");
+    li.textContent = movieLink;
+    results.appendChild(li);
 
   } catch (err) {
     results.innerHTML = "<li>Error fetching page.</li>";

@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Link Scraper — find every link on a page</title>
+<style>
+  :root{
+    --bg:#0f1724;
+    --card:#0b1220;
+    --muted:#94a3b8;
+    --accent:#6ee7b7;
+    --panel:#071025;
+    --glass: rgba(255,255,255,0.03);
+    --danger:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:linear-gradient(180deg,#021021 0%, #071024 60%);
+    color:#e6eef8;
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:28px;
+    gap:20px;
+  }
+  .container{
+    width:100%;
+    max-width:980px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:12px;
+    padding:18px;
+    box-shadow: 0 8px 30px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.03);
+  }
+  h1{margin:0 0 8px 0;font-size:20px}
+  p.lead{margin:0 0 14px 0;color:var(--muted);font-size:13px}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+  input[type="url"], select, button, textarea{
+    background:var(--panel);
+    border:1px solid rgba(255,255,255,0.04);
+    color:inherit;
+    padding:10px 12px;
+    border-radius:8px;
+    font-size:14px;
+  }
+  input[type="url"]{flex:1}
+  button{
+    cursor:pointer;
+    background:linear-gradient(90deg,#0ea5a3,#60a5fa);
+    border:none;
+    color:#02202a;
+    font-weight:600;
+  }
+  .muted{color:var(--muted);font-size:13px}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .results{margin-top:14px;}
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+    padding:12px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.02);
+    box-shadow: 0 6px 18px rgba(2,6,23,0.5);
+  }
+  .links-list{list-style:none;padding:0;margin:8px 0 0 0;display:grid;gap:6px;max-height:420px;overflow:auto}
+  .links-list li{padding:8px;border-radius:6px;background:var(--glass);display:flex;justify-content:space-between;gap:12px;align-items:center}
+  .link-left{display:flex;gap:10px;align-items:center;min-width:0}
+  .favicon{width:18px;height:18px;border-radius:3px;background:#ffffff11;display:inline-flex;align-items:center;justify-content:center;font-size:11px}
+  a.link{color:var(--accent);text-decoration:none;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:72%}
+  .meta{color:var(--muted);font-size:12px}
+  .small{font-size:12px;color:var(--muted)}
+  textarea{width:100%;min-height:160px;margin-top:8px;font-family:monospace;font-size:13px;resize:vertical}
+  label.switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+  .toggle{width:42px;height:24px;background:#152033;border-radius:999px;padding:3px;display:inline-block;position:relative}
+  .toggle > i{position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:white;transition:all .18s}
+  .toggle.on{background:#2dd4bf}
+  .toggle.on > i{transform:translateX(18px)}
+  .footer{margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .danger{background:linear-gradient(90deg,#ff7b7b,#ff4d4d);color:#301111;border:none}
+  .counts{font-weight:700}
+  .actions{display:flex;gap:8px}
+  .note{font-size:13px;color:var(--muted);margin-top:8px}
+  .csv-btn{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px;border-radius:8px}
+  .tag{background:#ffffff06;padding:6px 8px;border-radius:999px;font-size:12px;color:var(--muted)}
+  .error{color:var(--danger);font-weight:600}
+  @media (max-width:640px){ .row{flex-direction:column;align-items:stretch} a.link{max-width:58%} }
+</style>
+</head>
+<body>
+  <main class="container" role="main">
+    <h1>Link Scraper — extract links from a page</h1>
+    <p class="lead">Enter a URL, click <strong>Fetch &amp; Parse</strong>. If the target blocks cross-origin requests, either enable the CORS proxy toggle (public proxies may be unreliable) or paste the page HTML into the textarea and click <em>Parse HTML</em>.</p>
+
+    <div class="card">
+      <div class="row controls">
+        <input id="urlInput" type="url" placeholder="https://example.com" value="" />
+        <button id="fetchBtn">Fetch &amp; Parse</button>
+        <button id="parsePasteBtn" title="Parse HTML from the textarea below">Parse HTML</button>
+        <button id="clearBtn" class="danger">Clear</button>
+      </div>
+
+      <div class="row">
+        <label class="switch">
+          <span class="small muted">Use public CORS proxy</span>
+          <div id="proxyToggle" class="toggle" role="switch" aria-checked="false"><i></i></div>
+        </label>
+        <div style="flex:1"></div>
+        <div class="tag" id="proxyUrlLabel">Proxy: https://api.allorigins.win/raw?url=</div>
+      </div>
+
+      <div class="note">If fetch fails due to CORS, paste the page HTML in the box below and click <strong>Parse HTML</strong>.</div>
+
+      <textarea id="htmlPaste" placeholder="Paste full page HTML here as a fallback (when CORS prevents fetching)."></textarea>
+
+      <div class="footer">
+        <div class="small muted">Found <span id="count" class="counts">0</span> unique links</div>
+        <div class="actions">
+          <button id="copyBtn" class="csv-btn">Copy URLs</button>
+          <button id="exportCsvBtn" class="csv-btn">Export CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="results" class="results card" aria-live="polite" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div class="small muted" id="baseInfo">Base: —</div>
+        <div class="small muted" id="timeInfo">—</div>
+      </div>
+      <ul id="linksList" class="links-list" aria-label="Links found"></ul>
+      <div id="errorArea" style="margin-top:8px"></div>
+    </div>
+
+    <div style="margin-top:12px" class="muted small">
+      Tips: the tool extracts anchors plus many common URL-bearing attributes (href, src, srcset), CSS <code>url(...)</code>, and meta-refresh. Relative URLs are resolved against the page URL or a provided base.
+    </div>
+  </main>
+
+<script>
+(() => {
+  const el = id => document.getElementById(id);
+  const urlInput = el('urlInput');
+  const fetchBtn = el('fetchBtn');
+  const parsePasteBtn = el('parsePasteBtn');
+  const htmlPaste = el('htmlPaste');
+  const results = el('results');
+  const linksList = el('linksList');
+  const countEl = el('count');
+  const baseInfo = el('baseInfo');
+  const timeInfo = el('timeInfo');
+  const proxyToggle = el('proxyToggle');
+  const proxyUrlLabel = el('proxyUrlLabel');
+  const copyBtn = el('copyBtn');
+  const exportCsvBtn = el('exportCsvBtn');
+  const clearBtn = el('clearBtn');
+  const errorArea = el('errorArea');
+
+  let useProxy = false;
+  const proxyPrefixes = [
+    // public proxies (may be rate-limited); user can edit the code to add private proxy
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?',
+    'https://cors-anywhere.herokuapp.com/' // note: may require temporary activation
+  ];
+
+  // UI wire
+  proxyToggle.addEventListener('click', () => {
+    useProxy = !useProxy;
+    proxyToggle.classList.toggle('on', useProxy);
+    proxyToggle.setAttribute('aria-checked', useProxy ? 'true' : 'false');
+    proxyUrlLabel.textContent = 'Proxy: ' + (useProxy ? proxyPrefixes[0] : 'none (direct fetch)');
+  });
+
+  clearBtn.addEventListener('click', () => {
+    urlInput.value=''; htmlPaste.value=''; linksList.innerHTML=''; countEl.textContent='0'; results.style.display='none'; errorArea.innerHTML='';
+  });
+
+  fetchBtn.addEventListener('click', async () => {
+    errorArea.innerHTML = '';
+    const rawUrl = urlInput.value.trim();
+    if (!rawUrl) {
+      errorArea.innerHTML = '<div class="error">Please enter a URL above.</div>';
+      return;
+    }
+    try {
+      let url = rawUrl;
+      // normalize
+      if (!/^https?:\/\//i.test(url)) url = 'http://' + url;
+      timeInfo.textContent = 'Fetching…';
+      let fetchUrl = url;
+      if (useProxy) {
+        fetchUrl = proxyPrefixes[0] + encodeURIComponent(url);
+      }
+      const resp = await fetch(fetchUrl, { method: 'GET' });
+      if (!resp.ok) {
+        throw new Error('Fetch failed: ' + resp.status + ' ' + resp.statusText);
+      }
+      // get text
+      const text = await resp.text();
+      processHtml(text, url);
+    } catch (err) {
+      timeInfo.textContent = '';
+      const message = err && err.message ? err.message : String(err);
+      errorArea.innerHTML = '<div class="error">Fetch error: ' + escapeHtml(message) + '</div>' +
+        '<div class="muted small" style="margin-top:6px">If this is a CORS error, try toggling the proxy or paste the page HTML into the textarea below and click "Parse HTML".</div>';
+      console.error(err);
+    }
+  });
+
+  parsePasteBtn.addEventListener('click', () => {
+    const html = htmlPaste.value;
+    if (!html) {
+      errorArea.innerHTML = '<div class="error">Paste HTML into the box first.</div>';
+      return;
+    }
+    const base = urlInput.value.trim() || location.href;
+    processHtml(html, base);
+  });
+
+  copyBtn.addEventListener('click', () => {
+    const urls = [...linksList.querySelectorAll('li')].map(li => li.dataset.href);
+    if (!urls.length) return;
+    navigator.clipboard?.writeText(urls.join('\\n')).then(()=> {
+      copyBtn.textContent = 'Copied!';
+      setTimeout(()=> copyBtn.textContent='Copy URLs',1200);
+    }).catch(()=> {
+      alert('Copy failed — permission denied. You can export CSV instead.');
+    });
+  });
+
+  exportCsvBtn.addEventListener('click', () => {
+    const rows = [...linksList.querySelectorAll('li')].map(li => {
+      const href = li.dataset.href;
+      const text = li.querySelector('.link')?.textContent || '';
+      const count = li.dataset.count || '1';
+      return [href, text.replace(/"/g,'""'), count];
+    });
+    if (!rows.length) return;
+    let csv = 'url,anchor_text,count\\n';
+    rows.forEach(r => csv += `"${r[0]}","${r[1]}",${r[2]}\\n`);
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'links.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // safe HTML escape for error messages
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[ch])); }
+
+  // main parser
+  function processHtml(html, baseUrl) {
+    linksList.innerHTML = '';
+    baseInfo.textContent = 'Base: ' + baseUrl;
+    timeInfo.textContent = 'Parsing…';
+    results.style.display = 'block';
+    errorArea.innerHTML = '';
+
+    try {
+      // Parse DOM
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      // Collect URLs from many sources
+      const urls = [];
+
+      // 1) <a href>
+      doc.querySelectorAll('a[href]').forEach(a => urls.push({href:a.getAttribute('href'), text: (a.textContent||'').trim()}));
+
+      // 2) <area>
+      doc.querySelectorAll('area[href]').forEach(n => urls.push({href:n.getAttribute('href'), text: (n.alt||n.textContent||'').trim()}));
+
+      // 3) elements with src
+      const srcSelectors = ['img','script','iframe','audio','video','source','track','embed','input'];
+      srcSelectors.forEach(sel => {
+        doc.querySelectorAll(sel + '[src]').forEach(n => urls.push({href:n.getAttribute('src'), text: (n.alt||n.title||'').trim()}));
+      });
+
+      // 4) link rel (stylesheet, prefetch, etc)
+      doc.querySelectorAll('link[href]').forEach(n => urls.push({href:n.getAttribute('href'), text: (n.rel||n.title||'').trim()}));
+
+      // 5) srcset (images)
+      doc.querySelectorAll('[srcset]').forEach(n => {
+        const srcset = n.getAttribute('srcset');
+        srcset.split(',').forEach(part => {
+          const url = part.trim().split(/\s+/)[0];
+          if (url) urls.push({href:url, text:''});
+        });
+      });
+
+      // 6) meta refresh
+      doc.querySelectorAll('meta[http-equiv]').forEach(n => {
+        if ((n.getAttribute('http-equiv')||'').toLowerCase() === 'refresh') {
+          const c = n.getAttribute('content') || '';
+          const m = c.match(/url=(.*)/i);
+          if (m && m[1]) urls.push({href:m[1].trim(), text:'meta-refresh'});
+        }
+      });
+
+      // 7) CSS url(...) inside style tags and inline style attributes
+      // from <style> tags:
+      doc.querySelectorAll('style').forEach(s => {
+        const text = s.textContent || '';
+        extractCssUrls(text).forEach(u => urls.push({href:u, text:'css'}));
+      });
+      // from style attributes
+      doc.querySelectorAll('[style]').forEach(n => {
+        extractCssUrls(n.getAttribute('style')||'').forEach(u => urls.push({href:u, text:'inline-style'}));
+      });
+
+      // 8) plain-text URL-like patterns in the HTML (catch JS strings or data)
+      const plainMatches = Array.from(html.matchAll(/https?:\/\/[^\\s"'<>)+,]+/g));
+      plainMatches.forEach(m => urls.push({href: m[0], text: 'detected'}));
+
+      // Normalize and resolve against base
+      const resolved = {};
+      const base = (() => {
+        try { return new URL(baseUrl).href; } catch(e) { return location.href; }
+      })();
+
+      urls.forEach(item => {
+        if (!item || !item.href) return;
+        let href = item.href.trim();
+        // handle javascript: and mailto: and data:
+        if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(href)) {
+          // relative URL -> resolve
+          try { href = new URL(href, base).href; } catch(e) { /* ignore */ }
+        } else {
+          // absolute but may be like //example.com/path
+          if (href.startsWith('//')) {
+            const proto = (new URL(base)).protocol;
+            href = proto + href;
+          }
+        }
+        // Remove fragment-only duplicates? We'll keep full URL including fragments (they may be meaningful)
+        // store counts and first anchor text
+        const key = href;
+        if (!resolved[key]) resolved[key] = {href: key, count:0, text: item.text || ''};
+        resolved[key].count++;
+        if (!resolved[key].text && item.text) resolved[key].text = item.text;
+      });
+
+      // Turn into array and sort by count desc then alphabetically
+      const final = Object.values(resolved).sort((a,b) => (b.count - a.count) || a.href.localeCompare(b.href));
+
+      // Render
+      linksList.innerHTML = '';
+      if (final.length === 0) {
+        linksList.innerHTML = '<li class="small muted">No links found.</li>';
+      } else {
+        final.forEach(obj => {
+          const li = document.createElement('li');
+          li.dataset.href = obj.href;
+          li.dataset.count = obj.count;
+          const left = document.createElement('div');
+          left.className = 'link-left';
+          const fav = document.createElement('div');
+          fav.className = 'favicon';
+          fav.textContent = obj.href.replace(/^https?:\\/\\//,'').split('/')[0].slice(0,2).toUpperCase();
+          const a = document.createElement('a');
+          a.className = 'link';
+          a.href = obj.href;
+          a.textContent = obj.href;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          const t = document.createElement('div');
+          t.className = 'meta';
+          t.textContent = obj.text || '';
+          left.appendChild(fav);
+          left.appendChild(a);
+          left.appendChild(t);
+
+          const right = document.createElement('div');
+          right.style.textAlign='right';
+          const c = document.createElement('div');
+          c.className='small muted';
+          c.textContent = '×' + obj.count;
+          right.appendChild(c);
+
+          li.appendChild(left);
+          li.appendChild(right);
+          linksList.appendChild(li);
+        });
+      }
+
+      countEl.textContent = final.length;
+      timeInfo.textContent = 'Parsed at ' + new Date().toLocaleString();
+    } catch (err) {
+      console.error(err);
+      errorArea.innerHTML = '<div class="error">Parsing error: ' + escapeHtml(err.message || String(err)) + '</div>';
+    }
+  }
+
+  // css url extractor
+  function extractCssUrls(cssText){
+    const out = [];
+    const re = /url\\(([^)]+)\\)/g;
+    let m;
+    while ((m = re.exec(cssText)) !== null) {
+      let u = m[1].trim().replace(/^["']|["']$/g,'');
+      if (u) out.push(u);
+    }
+    return out;
+  }
+
+})();
+</script>
+</body>
+</html>

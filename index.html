@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Simple Link Finder</title>
+<title>Simple Link Finder (CORS Fixed)</title>
 <style>
   body { font-family: sans-serif; padding: 20px; }
   input { width: 300px; padding: 5px; }
@@ -26,11 +26,14 @@ async function findLinks() {
   results.innerHTML = "";
 
   try {
-    const res = await fetch(url);
-    const text = await res.text();
-
+    // Use a CORS proxy to bypass browser restrictions
+    const proxyURL = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+    const res = await fetch(proxyURL);
+    const data = await res.json();
+    
+    // data.contents contains the raw HTML
     const parser = new DOMParser();
-    const doc = parser.parseFromString(text, "text/html");
+    const doc = parser.parseFromString(data.contents, "text/html");
 
     const links = [...doc.querySelectorAll("a")];
 
@@ -46,7 +49,7 @@ async function findLinks() {
     });
 
   } catch (err) {
-    results.innerHTML = "<li>Error fetching page.</li>";
+    results.innerHTML = "<li>Error fetching page (even with proxy).</li>";
   }
 }
 </script>

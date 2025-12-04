@@ -74,14 +74,28 @@ async function searchMovie() {
 
     const movieID = match[1];
 
-    // Display the embed player
+    // Display the embed player + fullscreen button
     results.innerHTML = `
       <p>Movie ID: ${movieID}</p>
-      <iframe src="https://vidsync.xyz/embed/movie/${movieID}?autoPlay=true"></iframe>
+      <button id="fsBtn">Fullscreen</button>
+      <iframe id="player" src="https://vidsync.xyz/embed/movie/${movieID}?autoPlay=true"></iframe>
     `;
+
+    document.getElementById("fsBtn").onclick = () => toggleFullscreen();
 
   } catch (err) {
     results.innerHTML = "<p>Error fetching page.</p>";
+  }
+}
+
+// Fullscreen function
+function toggleFullscreen() {
+  const iframe = document.getElementById("player");
+
+  if (!document.fullscreenElement) {
+    iframe.requestFullscreen().catch(err => console.log(err));
+  } else {
+    document.exitFullscreen();
   }
 }
 </script>

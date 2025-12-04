@@ -2,34 +2,47 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Link Finder (TMDB Movie Filter)</title>
+<title>Movie + Show Link Finder</title>
 <style>
-  body { font-family: sans-serif; padding: 20px; }
+  body { 
+    font-family: sans-serif; 
+    padding: 20px; 
+    margin-bottom: 50px; /* Always 50px of empty space below everything */
+  }
   input { width: 300px; padding: 5px; }
-  button { padding: 6px 10px; }
-  ul { margin-top: 20px; }
+  button { padding: 6px 10px; margin-left: 10px; }
+  #results { margin-top: 20px; }
+  iframe {
+    margin-top: 20px;
+    width: 100%;
+    height: 500px;
+    border: none;
+  }
 </style>
 </head>
 <body>
 
-<h2>Link Finder</h2>
+<h2>Movie Search</h2>
+<input id="movieInput" placeholder="Enter movie name">
+<button onclick="searchMovie()">Search Movie</button>
 
-<input id="url" placeholder="Enter a URL or search term">
-<button onclick="findLinks()">Search</button>
+<h2>Show Search</h2>
+<input id="showInput" placeholder="Enter show name">
+<button disabled>Search Show (Not Ready)</button>
 
-<ul id="results"></ul>
+<div id="results"></div>
 
 <script>
-async function findLinks() {
-  let input = document.getElementById("url").value.trim();
+async function searchMovie() {
+  let input = document.getElementById("movieInput").value.trim();
   const results = document.getElementById("results");
   results.innerHTML = "";
 
-  // Convert text to TMDB search URL
+  // Convert movie text into TMDB search URL
   if (!input.startsWith("http://") && !input.startsWith("https://")) {
     const query = input.split(" ").join("+");
     input = `https://www.themoviedb.org/search?language=en-US&query=${query}`;
-    document.getElementById("url").value = input;
+    document.getElementById("movieInput").value = input;
   }
 
   try {
@@ -42,22 +55,33 @@ async function findLinks() {
 
     const links = [...doc.querySelectorAll("a")].map(a => a.href);
 
-    // Filter: must include /movie/ and have 2+ digits in a row
+    // Find first TMDB movie link with 2+ digits
     const movieLink = links.find(href =>
       href.includes("/movie/") && /\d{2,}/.test(href)
     );
 
     if (!movieLink) {
-      results.innerHTML = "<li>No movie link found.</li>";
+      results.innerHTML = "<p>No movie link found.</p>";
       return;
     }
 
-    const li = document.createElement("li");
-    li.textContent = movieLink;
-    results.appendChild(li);
+    // Extract the ID after /movie/
+    const match = movieLink.match(/\/movie\/(\d{2,})/);
+    if (!match) {
+      results.innerHTML = "<p>No valid movie ID found.</p>";
+      return;
+    }
+
+    const movieID = match[1];
+
+    // Display the embed player
+    results.innerHTML = `
+      <p>Movie ID: ${movieID}</p>
+      <iframe src="https://vidsync.xyz/embed/movie/${movieID}?autoPlay=true"></iframe>
+    `;
 
   } catch (err) {
-    results.innerHTML = "<li>Error fetching page.</li>";
+    results.innerHTML = "<p>Error fetching page.</p>";
   }
 }
 </script>

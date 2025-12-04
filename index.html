@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Simple Link Finder (CORS Fixed)</title>
+<title>Link Finder (TMDB Input Converter)</title>
 <style>
   body { font-family: sans-serif; padding: 20px; }
   input { width: 300px; padding: 5px; }
@@ -14,24 +14,29 @@
 
 <h2>Link Finder</h2>
 
-<input id="url" placeholder="Enter a URL">
+<input id="url" placeholder="Enter a URL or search term">
 <button onclick="findLinks()">Search</button>
 
 <ul id="results"></ul>
 
 <script>
 async function findLinks() {
-  const url = document.getElementById("url").value;
+  let input = document.getElementById("url").value.trim();
   const results = document.getElementById("results");
   results.innerHTML = "";
 
+  // If input does NOT start with http, treat it as a TMDB search
+  if (!input.startsWith("http://") && !input.startsWith("https://")) {
+    const query = input.split(" ").join("+");
+    input = `https://www.themoviedb.org/search?language=en-US&query=${query}`;
+    document.getElementById("url").value = input; // Replace input with full URL
+  }
+
   try {
-    // Use a CORS proxy to bypass browser restrictions
-    const proxyURL = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+    const proxyURL = "https://api.allorigins.win/get?url=" + encodeURIComponent(input);
     const res = await fetch(proxyURL);
     const data = await res.json();
-    
-    // data.contents contains the raw HTML
+
     const parser = new DOMParser();
     const doc = parser.parseFromString(data.contents, "text/html");
 
@@ -49,7 +54,7 @@ async function findLinks() {
     });
 
   } catch (err) {
-    results.innerHTML = "<li>Error fetching page (even with proxy).</li>";
+    results.innerHTML = "<li>Error fetching page.</li>";
   }
 }
 </script>

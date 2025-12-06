@@ -122,7 +122,7 @@
 <button id="playButton" onclick="playMovie()">▶ Play</button>
 
 <div id="playerWrapper">
-    <iframe id="playerFrame" src="" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>
+    <iframe id="playerFrame" src="" allowfullscreen></iframe>
 </div>
 
 <script>
@@ -186,7 +186,7 @@ function searchOMDb() {
 function playMovie() {
     if (!lastImdbID) return;
 
-    const embedURL = `https://player.smashy.stream/movie/${lastImdbID}`;
+    const embedURL = `https://embedmaster.link/movie/${lastImdbID}`;
 
     document.getElementById("playerFrame").src = embedURL;
     document.getElementById("playerWrapper").style.display = "block";

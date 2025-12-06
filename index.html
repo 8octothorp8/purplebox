@@ -3,18 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <title>OMDb Search</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #000000;
+        color: #FFFFFF;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    #logo {
+        margin-top: 30px;
+        width: 200px; /* clean size */
+        height: auto;
+    }
+
+    .inputRow {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    input, select, button {
+        background: #000000;
+        color: #FFFFFF;
+        border: 2px solid #00CEFF;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 16px;
+    }
+
+    input::placeholder {
+        color: #BBBBBB;
+    }
+
+    button:hover {
+        cursor: pointer;
+        background: #00CEFF;
+        color: #000000;
+    }
+
+    #output {
+        width: 90%;
+        max-width: 600px;
+        margin-top: 25px;
+        text-align: left;
+        white-space: pre-wrap;
+        color: #FFFFFF;
+        border: 1px solid #00CEFF;
+        padding: 15px;
+        border-radius: 8px;
+    }
+</style>
 </head>
 <body>
 
-<input id="titleInput" type="text" placeholder="Title" style="width:250px;">
-<input id="yearInput" type="text" placeholder="Year (optional)" style="width:80px;">
+<img id="logo" src="https://tikolu.net/i/rwurq">
 
-<select id="typeSelect">
-  <option value="movie">Movie</option>
-  <option value="series">Show</option>
-</select>
-
-<button onclick="searchOMDb()">Search</button>
+<div class="inputRow">
+    <input id="titleInput" type="text" placeholder="Title" style="width:250px;">
+    <input id="yearInput" type="text" placeholder="Year (optional)" style="width:100px;">
+    <select id="typeSelect">
+      <option value="movie">Movie</option>
+      <option value="series">Show</option>
+    </select>
+    <button onclick="searchOMDb()">Search</button>
+</div>
 
 <pre id="output"></pre>
 

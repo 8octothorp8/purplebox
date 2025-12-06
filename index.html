@@ -88,21 +88,18 @@
         display: none;
     }
 
-    #playButton:hover {
-        cursor: pointer;
-        opacity: 0.85;
+    #playerWrapper {
+        margin-top: 25px;
+        width: 90%;
+        max-width: 900px;
+        display: none;
     }
 
-    #output {
-        width: 90%;
-        max-width: 600px;
-        margin-top: 25px;
-        text-align: left;
-        white-space: pre-wrap;
-        color: #FFFFFF;
-        border: 1px solid #00CEFF;
-        padding: 15px;
-        border-radius: 8px;
+    iframe {
+        width: 100%;
+        height: 500px;
+        border: 2px solid #00CEFF;
+        border-radius: 10px;
     }
 </style>
 </head>
@@ -122,11 +119,15 @@
 
 <div id="card"></div>
 
-<button id="playButton">▶ Play</button>
+<button id="playButton" onclick="playMovie()">▶ Play</button>
 
-<pre id="output"></pre>
+<div id="playerWrapper">
+    <iframe id="playerFrame" src="" allowfullscreen></iframe>
+</div>
 
 <script>
+let lastImdbID = null;
+
 function searchOMDb() {
     const title = document.getElementById("titleInput").value.trim();
     const year = document.getElementById("yearInput").value.trim();
@@ -143,14 +144,15 @@ function searchOMDb() {
     fetch(url)
         .then(res => res.json())
         .then(data => {
-            document.getElementById("output").textContent =
-                JSON.stringify(data, null, 2);
 
             if (data.Response === "False") {
                 document.getElementById("card").style.display = "none";
                 document.getElementById("playButton").style.display = "none";
+                document.getElementById("playerWrapper").style.display = "none";
                 return;
             }
+
+            lastImdbID = data.imdbID;  // save ID for the play button
 
             const poster = (data.Poster && data.Poster !== "N/A") ?
                 `<img src="${data.Poster}">` : "";
@@ -166,18 +168,30 @@ function searchOMDb() {
             `;
             document.getElementById("card").style.display = "block";
 
-            // show play button ONLY for movies
+            // Only movies get a play button
             if (type === "movie") {
                 document.getElementById("playButton").style.display = "inline-block";
             } else {
                 document.getElementById("playButton").style.display = "none";
             }
+
+            // Hide old player
+            document.getElementById("playerWrapper").style.display = "none";
         })
         .catch(err => {
-            document.getElementById("output").textContent = "Error: " + err;
             document.getElementById("card").style.display = "none";
             document.getElementById("playButton").style.display = "none";
+            document.getElementById("playerWrapper").style.display = "none";
         });
+}
+
+function playMovie() {
+    if (!lastImdbID) return;
+
+    const embedURL = `https://player.smashy.stream/movie/${lastImdbID}`;
+
+    document.getElementById("playerFrame").src = embedURL;
+    document.getElementById("playerWrapper").style.display = "block";
 }
 </script>
 

@@ -19,7 +19,7 @@
 
     #logo {
         margin-top: 30px;
-        width: 200px; /* clean size */
+        width: 200px;
         height: auto;
     }
 
@@ -40,14 +40,41 @@
         font-size: 16px;
     }
 
-    input::placeholder {
-        color: #BBBBBB;
-    }
-
     button:hover {
         cursor: pointer;
         background: #00CEFF;
         color: #000000;
+    }
+
+    #card {
+        margin-top: 30px;
+        background: #000000;
+        border: 2px solid #00CEFF;
+        border-radius: 10px;
+        padding: 20px;
+        width: 90%;
+        max-width: 600px;
+        display: none;
+        text-align: left;
+        color: #FFFFFF;
+    }
+
+    #card img {
+        width: 180px;
+        border-radius: 8px;
+        border: 2px solid #00CEFF;
+        float: left;
+        margin-right: 15px;
+    }
+
+    #card h2 {
+        margin: 0;
+        color: #00CEFF;
+    }
+
+    #card p {
+        margin-top: 6px;
+        line-height: 1.4em;
     }
 
     #output {
@@ -77,6 +104,10 @@
     <button onclick="searchOMDb()">Search</button>
 </div>
 
+<!-- THE CARD -->
+<div id="card"></div>
+
+<!-- raw JSON output -->
 <pre id="output"></pre>
 
 <script>
@@ -96,12 +127,36 @@ function searchOMDb() {
     fetch(url)
         .then(res => res.json())
         .then(data => {
+            // JSON box
             document.getElementById("output").textContent =
                 JSON.stringify(data, null, 2);
+
+            // If error
+            if (data.Response === "False") {
+                document.getElementById("card").style.display = "none";
+                return;
+            }
+
+            // Build the card
+            const poster = (data.Poster && data.Poster !== "N/A") ?
+                `<img src="${data.Poster}">` :
+                "";
+
+            document.getElementById("card").innerHTML = `
+                ${poster}
+                <h2>${data.Title}</h2>
+                <p><strong>Year:</strong> ${data.Year}</p>
+                <p><strong>Rated:</strong> ${data.Rated}</p>
+                <p><strong>Genre:</strong> ${data.Genre}</p>
+                <p><strong>Plot:</strong><br>${data.Plot}</p>
+                <div style="clear: both;"></div>
+            `;
+            document.getElementById("card").style.display = "block";
         })
         .catch(err => {
             document.getElementById("output").textContent =
                 "Error: " + err;
+            document.getElementById("card").style.display = "none";
         });
 }
 </script>

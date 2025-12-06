@@ -6,7 +6,6 @@
 </head>
 <body>
 
-<!-- Inputs -->
 <input id="titleInput" type="text" placeholder="Title" style="width:250px;">
 <input id="yearInput" type="text" placeholder="Year (optional)" style="width:80px;">
 
@@ -30,24 +29,18 @@ function searchOMDb() {
         return;
     }
 
-    // Build URL
     let url = `https://www.omdbapi.com/?apikey=f9948667&t=${encodeURIComponent(title)}&type=${type}`;
     if (year) url += `&y=${encodeURIComponent(year)}`;
 
-    // Fetch
     fetch(url)
         .then(res => res.json())
         .then(data => {
-            document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+            document.getElementById("output").textContent =
+                JSON.stringify(data, null, 2);
         })
         .catch(err => {
-            document.getElementById("output").textContent = "Error: " + err;
-        });
-}
-</script>
-
-</body>
-</html>            document.getElementById("output").textContent = "Error: " + err;
+            document.getElementById("output").textContent =
+                "Error: " + err;
         });
 }
 </script>

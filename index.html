@@ -77,6 +77,22 @@
         line-height: 1.4em;
     }
 
+    #playButton {
+        margin-top: 12px;
+        padding: 10px 25px;
+        background: #00CEFF;
+        color: #000000;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        display: none;
+    }
+
+    #playButton:hover {
+        cursor: pointer;
+        opacity: 0.85;
+    }
+
     #output {
         width: 90%;
         max-width: 600px;
@@ -104,10 +120,10 @@
     <button onclick="searchOMDb()">Search</button>
 </div>
 
-<!-- THE CARD -->
 <div id="card"></div>
 
-<!-- raw JSON output -->
+<button id="playButton">▶ Play</button>
+
 <pre id="output"></pre>
 
 <script>
@@ -127,20 +143,17 @@ function searchOMDb() {
     fetch(url)
         .then(res => res.json())
         .then(data => {
-            // JSON box
             document.getElementById("output").textContent =
                 JSON.stringify(data, null, 2);
 
-            // If error
             if (data.Response === "False") {
                 document.getElementById("card").style.display = "none";
+                document.getElementById("playButton").style.display = "none";
                 return;
             }
 
-            // Build the card
             const poster = (data.Poster && data.Poster !== "N/A") ?
-                `<img src="${data.Poster}">` :
-                "";
+                `<img src="${data.Poster}">` : "";
 
             document.getElementById("card").innerHTML = `
                 ${poster}
@@ -152,11 +165,18 @@ function searchOMDb() {
                 <div style="clear: both;"></div>
             `;
             document.getElementById("card").style.display = "block";
+
+            // show play button ONLY for movies
+            if (type === "movie") {
+                document.getElementById("playButton").style.display = "inline-block";
+            } else {
+                document.getElementById("playButton").style.display = "none";
+            }
         })
         .catch(err => {
-            document.getElementById("output").textContent =
-                "Error: " + err;
+            document.getElementById("output").textContent = "Error: " + err;
             document.getElementById("card").style.display = "none";
+            document.getElementById("playButton").style.display = "none";
         });
 }
 </script>

@@ -2,101 +2,40 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Movie + Show Link Finder</title>
-<style>
-  body { 
-    font-family: sans-serif; 
-    padding: 20px; 
-    margin-bottom: 50px; /* Always 50px of empty space below everything */
-  }
-  input { width: 300px; padding: 5px; }
-  button { padding: 6px 10px; margin-left: 10px; }
-  #results { margin-top: 20px; }
-  iframe {
-    margin-top: 20px;
-    width: 100%;
-    height: 500px;
-    border: none;
-  }
-</style>
+<title>OMDb Tester</title>
 </head>
 <body>
 
-<h2>Movie Search</h2>
-<input id="movieInput" placeholder="Enter movie name">
-<button onclick="searchMovie()">Search Movie</button>
+<!-- Inputs -->
+<input id="titleInput" type="text" placeholder="Movie title" style="width:250px;">
+<input id="yearInput" type="text" placeholder="Year (optional)" style="width:80px;">
+<button onclick="searchMovie()">Search</button>
 
-<h2>Show Search</h2>
-<input id="showInput" placeholder="Enter show name">
-<button disabled>Search Show (Not Ready)</button>
-
-<div id="results"></div>
+<pre id="output"></pre>
 
 <script>
-async function searchMovie() {
-  let input = document.getElementById("movieInput").value.trim();
-  const results = document.getElementById("results");
-  results.innerHTML = "";
+function searchMovie() {
+    const title = document.getElementById("titleInput").value.trim();
+    const year = document.getElementById("yearInput").value.trim();
 
-  // Convert movie text into TMDB search URL
-  if (!input.startsWith("http://") && !input.startsWith("https://")) {
-    const query = input.split(" ").join("+");
-    input = `https://www.themoviedb.org/search?language=en-US&query=${query}`;
-    document.getElementById("movieInput").value = input;
-  }
-
-  try {
-    const proxyURL = "https://api.allorigins.win/get?url=" + encodeURIComponent(input);
-    const res = await fetch(proxyURL);
-    const data = await res.json();
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(data.contents, "text/html");
-
-    const links = [...doc.querySelectorAll("a")].map(a => a.href);
-
-    // Find first TMDB movie link with 2+ digits
-    const movieLink = links.find(href =>
-      href.includes("/movie/") && /\d{2,}/.test(href)
-    );
-
-    if (!movieLink) {
-      results.innerHTML = "<p>No movie link found.</p>";
-      return;
+    if (!title) {
+        alert("Please enter a movie title.");
+        return;
     }
 
-    // Extract the ID after /movie/
-    const match = movieLink.match(/\/movie\/(\d{2,})/);
-    if (!match) {
-      results.innerHTML = "<p>No valid movie ID found.</p>";
-      return;
-    }
+    // Build URL
+    let url = `https://www.omdbapi.com/?apikey=f9948667&t=${encodeURIComponent(title)}`;
+    if (year) url += `&y=${encodeURIComponent(year)}`;
 
-    const movieID = match[1];
-
-    // Display the embed player + fullscreen button
-    results.innerHTML = `
-      <p>Movie ID: ${movieID}</p>
-      <button id="fsBtn">Fullscreen</button>
-      <iframe id="player" src="https://vidsync.xyz/embed/movie/${movieID}?autoPlay=true"></iframe>
-    `;
-
-    document.getElementById("fsBtn").onclick = () => toggleFullscreen();
-
-  } catch (err) {
-    results.innerHTML = "<p>Error fetching page.</p>";
-  }
-}
-
-// Fullscreen function
-function toggleFullscreen() {
-  const iframe = document.getElementById("player");
-
-  if (!document.fullscreenElement) {
-    iframe.requestFullscreen().catch(err => console.log(err));
-  } else {
-    document.exitFullscreen();
-  }
+    // Fetch from OMDb
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(err => {
+            document.getElementById("output").textContent = "Error: " + err;
+        });
 }
 </script>
 
